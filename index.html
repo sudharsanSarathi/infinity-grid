@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Infinity Wall</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="controls">
+    <label>
+      Background Color:
+      <input type="color" id="bg-color-input" value="#181818">
+    </label>
+    <br>
+    <label>
+      Upload Photos:
+      <input type="file" id="photo-upload" accept="image/*" multiple>
+    </label>
+    <br>
+    <label>
+      Or paste image URLs (comma or newline separated):
+      <textarea id="photo-url-upload" rows="2" style="width: 300px; margin-top: 4px;"></textarea>
+    </label>
+    <button id="add-url-btn" style="margin-left: 8px;">Add URLs</button>
+    <button id="copy-embed-btn" style="margin-left: 24px;">Copy Embed Code</button>
+  </div>
+  <div id="infinity-wall-container">
+    <div id="infinity-wall"></div>
+  </div>
+  <div id="edge-gradient-overlay"></div>
+  <div id="modal" class="hidden">
+    <span id="close-modal">&times;</span>
+    <img id="modal-img" src="" alt="Expanded">
+  </div>
+  <div id="iframe-embed-root" style="display:none;"></div>
+  <script src="script.js"></script>
+</body>
+</html> 

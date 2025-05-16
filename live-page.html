@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Uplift Figma Page</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #181818;
+      --accent: #F7A755;
+      --bg: #EEECE5;
+      --card-bg: #fff;
+      --border: #ececec;
+      --radius: 16px;
+      --shadow: 0 2px 12px 0 rgba(60,60,80,0.06);
+      --font-main: 'Inter', 'Segoe UI', Arial, sans-serif;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--primary);
+      font-family: var(--font-main);
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    .uplift-header {
+      width: 100%;
+      background: var(--card-bg);
+      box-shadow: var(--shadow);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 24px 40px 24px 40px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .uplift-logo {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -1px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .uplift-nav {
+      display: flex;
+      gap: 32px;
+    }
+    .uplift-nav-btn {
+      background: none;
+      border: none;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--primary);
+      cursor: pointer;
+      padding: 8px 16px;
+      border-radius: var(--radius);
+      transition: background 0.15s;
+    }
+    .uplift-nav-btn.active, .uplift-nav-btn:hover {
+      background: var(--accent);
+      color: #fff;
+    }
+    .uplift-main {
+      max-width: 1200px;
+      margin: 40px auto 0 auto;
+      padding: 0 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 40px;
+    }
+    .uplift-hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .uplift-title {
+      font-size: 2.8rem;
+      font-weight: 700;
+      margin: 0;
+      color: var(--primary);
+      text-align: center;
+      letter-spacing: -1px;
+    }
+    .uplift-subtitle {
+      font-size: 1.25rem;
+      color: #666;
+      text-align: center;
+      margin: 0;
+      font-weight: 400;
+    }
+    .uplift-controls-row {
+      display: flex;
+      gap: 20px;
+      margin: 32px 0 0 0;
+      align-items: center;
+      justify-content: center;
+    }
+    .uplift-color-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 1rem;
+    }
+    .uplift-color-input {
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: 8px;
+      background: #f0f0f3;
+      box-shadow: 0 1px 2px 0 rgba(60,60,80,0.04);
+      cursor: pointer;
+    }
+    .uplift-copy-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 10px 28px;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .uplift-copy-btn:hover {
+      background: #e08a2d;
+    }
+    .uplift-upload-area {
+      background: var(--card-bg);
+      border: 2px dashed var(--accent);
+      border-radius: var(--radius);
+      padding: 40px 0 32px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      margin: 0 auto;
+      max-width: 420px;
+      width: 100%;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .uplift-upload-area:hover {
+      border-color: #e08a2d;
+    }
+    .uplift-upload-icon {
+      font-size: 2.5rem;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+    .uplift-upload-text {
+      font-size: 1.1rem;
+      color: var(--primary);
+      font-weight: 600;
+    }
+    .uplift-upload-subtext {
+      font-size: 0.95rem;
+      color: #888;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .uplift-upload-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 10px 28px;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background 0.15s;
+    }
+    .uplift-upload-btn:hover {
+      background: #e08a2d;
+    }
+    @media (max-width: 800px) {
+      .uplift-main {
+        padding: 0 8px;
+      }
+      .uplift-header {
+        padding: 16px 12px;
+      }
+    }
+    @media (max-width: 600px) {
+      .uplift-header {
+        flex-direction: column;
+        gap: 12px;
+        padding: 12px 4px;
+      }
+      .uplift-main {
+        margin-top: 16px;
+        gap: 24px;
+      }
+      .uplift-title {
+        font-size: 2rem;
+      }
+      .uplift-upload-area {
+        padding: 24px 0 18px 0;
+        max-width: 98vw;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="uplift-header">
+    <div class="uplift-logo">uplift</div>
+    <nav class="uplift-nav">
+      <button class="uplift-nav-btn active">Home</button>
+      <button class="uplift-nav-btn">Templates</button>
+      <button class="uplift-nav-btn">About</button>
+      <button class="uplift-nav-btn">Share</button>
+    </nav>
+  </header>
+  <main class="uplift-main">
+    <section class="uplift-hero">
+      <h1 class="uplift-title">Create Your Grid Design</h1>
+      <p class="uplift-subtitle">Design beautiful grid layouts with custom backgrounds and media.<br>Perfect for portfolios, galleries, and presentations.</p>
+      <div class="uplift-controls-row">
+        <label class="uplift-color-label">
+          <input type="color" id="bg-color-input" value="#EEECE5" class="uplift-color-input">
+          <span>Background</span>
+        </label>
+        <button id="copy-embed-btn" class="uplift-copy-btn">Copy iframe</button>
+      </div>
+      <div class="uplift-upload-area" id="uplift-upload-area">
+        <div class="uplift-upload-icon">⬆️</div>
+        <div class="uplift-upload-text">Drag images here or click to browse</div>
+        <div class="uplift-upload-subtext">Add as many images as possible to make your grid look more interesting!</div>
+        <button class="uplift-upload-btn" id="photo-upload-btn">Upload Images</button>
+        <input type="file" id="photo-upload" accept="image/*" multiple style="display:none;">
+      </div>
+    </section>
+    <!-- Add more sections/components as per Figma if needed -->
+  </main>
+</body>
+</html> 
