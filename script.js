@@ -639,82 +639,15 @@ if (addUrlBtn && photoUrlUpload) {
   });
 }
 
-// --- Copy full grid HTML code with images and CSS ---
+// --- Copy only the #infinity-wall grid HTML with images ---
 document.getElementById('copy-embed-btn').addEventListener('click', async () => {
   try {
-    // 1. Inline CSS (paste your style.css content here as a string)
-    const css = `
-      body { margin: 0; padding: 0; background: #EEECE5; min-height: 100vh; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; color: #222; }
-      #infinity-wall-container { width: 100vw; height: 100vh; overflow: auto; }
-      #infinity-wall { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 24px; padding: 32px; }
-      .rect-box { background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; position: relative; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-      .rect-box img { width: 100%; height: 100%; object-fit: cover; display: block; }
-      #modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(34,36,38,0.18); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-      #modal.hidden { display: none; }
-      #modal-img { max-width: 90vw; max-height: 90vh; border-radius: 16px; box-shadow: 0 8px 32px 0 rgba(60,60,80,0.10); }
-      #close-modal { position: absolute; top: 24px; right: 32px; font-size: 2rem; color: #fff; cursor: pointer; z-index: 1001; }
-    `;
-
-    // 2. Build the grid HTML
     const images = uploadedImages.map(img => img.src);
     if (images.length === 0) throw new Error('No images to export.');
-    const gridHtml = images.map(url =>
-      `<div class="rect-box"><img src="${url}" alt="Image"></div>`
-    ).join('');
-
-    // 3. Modal HTML
-    const modalHtml = `
-      <div id="modal" class="hidden">
-        <span id="close-modal">&times;</span>
-        <img id="modal-img" src="" alt="Expanded">
-      </div>
-    `;
-
-    // 4. Minimal JS for modal interaction
-    const js = `
-      document.querySelectorAll('.rect-box img').forEach(img => {
-        img.addEventListener('click', function() {
-          document.getElementById('modal-img').src = this.src;
-          document.getElementById('modal').classList.remove('hidden');
-        });
-      });
-      document.getElementById('close-modal').onclick = function() {
-        document.getElementById('modal').classList.add('hidden');
-        document.getElementById('modal-img').src = '';
-      };
-      document.getElementById('modal').onclick = function(e) {
-        if (e.target === this) {
-          this.classList.add('hidden');
-          document.getElementById('modal-img').src = '';
-        }
-      };
-    `;
-
-    // 5. Compose the full HTML
-    const html = `
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <title>Infinity Wall Export</title>
-        <style>${css}</style>
-      </head>
-      <body>
-        <div id="infinity-wall-container">
-          <div id="infinity-wall">
-            ${gridHtml}
-          </div>
-        </div>
-        ${modalHtml}
-        <script>${js}</script>
-      </body>
-      </html>
-    `.trim();
-
-    // 6. Copy to clipboard
-    await navigator.clipboard.writeText(html);
-
-    // 7. Feedback
+    const gridHtml = `<div id=\"infinity-wall\">` +
+      images.map(url => `<div class=\"rect-box\"><img src=\"${url}\" alt=\"Image\"></div>`).join('') +
+      `</div>`;
+    await navigator.clipboard.writeText(gridHtml);
     const copyBtn = document.getElementById('copy-embed-btn');
     const originalText = copyBtn.textContent;
     copyBtn.textContent = 'Copied!';
