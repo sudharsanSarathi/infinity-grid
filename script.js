@@ -479,8 +479,7 @@ function renderAppleGrid(targetWall = wall, imagesOverride = null, hideEmbedBtn 
       let hasImg = false;
       if (uploadedImages.length > 0 || (uploadedImages.length === 0 && images[imgIdx])) {
         const img = document.createElement('img');
-        const src = images[imgIdx].startsWith('http') ? images[imgIdx] : '/images/' + images[imgIdx];
-        img.src = src;
+        img.src = images[imgIdx];
         img.style.width = '100%';
         img.style.height = '100%';
         img.style.objectFit = 'cover';
@@ -579,8 +578,7 @@ function showExpandedModal(imgSrc) {
     imgWrap.style.height = '60vh';
   }
   const img = document.createElement('img');
-  const src = imgSrc.startsWith('http') ? imgSrc : '/images/' + imgSrc;
-  img.src = src;
+  img.src = imgSrc;
   img.style.width = '100%';
   img.style.height = '100%';
   img.style.objectFit = 'contain';
