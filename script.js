@@ -188,6 +188,8 @@ function updateBackgrounds(color) {
     `linear-gradient(to bottom, rgba(${r},${g},${b},1) 0%, rgba(${r},${g},${b},0) 8%, rgba(${r},${g},${b},0) 92%, rgba(${r},${g},${b},1) 100%)`;
   const edgeOverlay = document.getElementById('edge-gradient-overlay');
   if (edgeOverlay) edgeOverlay.style.background = edgeGradient;
+  // Update top/bottom overlay
+  updateTopBottomGradientOverlay(color);
   // Update .rect-box background for all boxes (unless they have an image)
   document.querySelectorAll('.rect-box').forEach(box => {
     const hasImg = box.querySelector('img');
@@ -485,7 +487,11 @@ function renderAppleGrid(targetWall = wall, imagesOverride = null, hideEmbedBtn 
       box.className = 'rect-box';
       box.dataset.row = row;
       box.dataset.col = col;
-      if (!hideEmbedBtn) box.onclick = () => showExpandedModal(images[imgIdx]);
+      // Only the box is clickable
+      if (!hideEmbedBtn) box.onclick = (e) => {
+        e.stopPropagation();
+        showExpandedModal(images[imgIdx]);
+      };
       let hasImg = false;
       if (uploadedImages.length > 0 || (uploadedImages.length === 0 && images[imgIdx])) {
         const img = document.createElement('img');
@@ -507,6 +513,18 @@ function renderAppleGrid(targetWall = wall, imagesOverride = null, hideEmbedBtn 
   }
   highlightCenterCell();
   updateBackgrounds(currentBgColor);
+
+  // Center the grid after rendering
+  setTimeout(() => {
+    const gridWidth = targetWall.offsetWidth;
+    const gridHeight = targetWall.offsetHeight;
+    const containerWidth = container.clientWidth;
+    const containerHeight = container.clientHeight;
+    const centerScrollLeft = Math.max(0, (gridWidth - containerWidth) / 2);
+    const centerScrollTop = Math.max(0, (gridHeight - containerHeight) / 2);
+    container.scrollLeft = centerScrollLeft;
+    container.scrollTop = centerScrollTop;
+  }, 50);
 }
 
 function snapDockToCenter() {
@@ -577,27 +595,38 @@ function showExpandedModal(imgSrc) {
   imgWrap.style.display = 'flex';
   imgWrap.style.alignItems = 'center';
   imgWrap.style.justifyContent = 'center';
-  imgWrap.style.maxWidth = '90vw';
-  imgWrap.style.maxHeight = '90vh';
+  imgWrap.style.maxWidth = '98vw';
+  imgWrap.style.maxHeight = '98vh';
   imgWrap.style.width = 'auto';
   imgWrap.style.height = 'auto';
-  // Mobile override
-  if (window.innerWidth <= 600) {
-    imgWrap.style.maxWidth = '98vw';
-    imgWrap.style.maxHeight = '60vh';
-    imgWrap.style.width = 'auto';
-    imgWrap.style.height = 'auto';
-  }
+
   const img = document.createElement('img');
   const src = imgSrc.startsWith('http') ? imgSrc : '/images/' + imgSrc;
   img.src = src;
   img.style.display = 'block';
-  // Only set width/height for desktop, let CSS handle mobile
-  if (window.innerWidth > 600) {
-    img.style.width = '100%';
-    img.style.height = '100%';
-    img.style.objectFit = 'contain';
-  }
+  img.style.maxWidth = '98vw';
+  img.style.maxHeight = '98vh';
+  img.style.width = 'auto';
+  img.style.height = 'auto';
+  img.style.objectFit = 'contain';
+  img.onload = function() {
+    // Wrap the modal to the image's natural size, clamped to viewport
+    const naturalW = img.naturalWidth;
+    const naturalH = img.naturalHeight;
+    const maxW = window.innerWidth * 0.98;
+    const maxH = window.innerHeight * 0.98;
+    let w = naturalW, h = naturalH;
+    if (w > maxW) {
+      h = h * (maxW / w);
+      w = maxW;
+    }
+    if (h > maxH) {
+      w = w * (maxH / h);
+      h = maxH;
+    }
+    imgWrap.style.width = w + 'px';
+    imgWrap.style.height = h + 'px';
+  };
   imgWrap.appendChild(img);
   // Close button
   const closeBtn = document.createElement('button');
@@ -620,9 +649,8 @@ function showExpandedModal(imgSrc) {
   };
   imgWrap.appendChild(closeBtn);
   modal.appendChild(imgWrap);
-  // Do NOT close on background click
+  // Only close on close button
   modal.onclick = (e) => {
-    // Only close if clicking the close button
     if (e.target === closeBtn) {
       modal.style.display = 'none';
     }
@@ -935,4 +963,31 @@ document.getElementById('download-grid-html-btn').addEventListener('click', () =
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-}); 
+});
+
+// Add top/bottom blending gradient overlay
+(function setupTopBottomGradientOverlay() {
+  let overlay = document.getElementById('top-bottom-gradient-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'top-bottom-gradient-overlay';
+    overlay.style.position = 'fixed';
+    overlay.style.left = '0';
+    overlay.style.right = '0';
+    overlay.style.top = '0';
+    overlay.style.height = '100vh';
+    overlay.style.pointerEvents = 'none';
+    overlay.style.zIndex = '5';
+    overlay.style.width = '100vw';
+    overlay.style.background = 'none';
+    document.body.appendChild(overlay);
+  }
+})();
+
+function updateTopBottomGradientOverlay(color) {
+  const overlay = document.getElementById('top-bottom-gradient-overlay');
+  if (!overlay) return;
+  // Convert hex to rgb
+  const [r, g, b] = hexToRgb(color);
+  overlay.style.background = `linear-gradient(to bottom, rgba(${r},${g},${b},0.95) 0%, rgba(${r},${g},${b},0.0) 8%, rgba(${r},${g},${b},0.0) 92%, rgba(${r},${g},${b},0.95) 100%)`;
+} 
