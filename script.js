@@ -642,14 +642,14 @@ if (addUrlBtn && photoUrlUpload) {
 // --- Copy only the #infinity-wall grid HTML with images and inline styles, suitable for iframe srcdoc ---
 document.getElementById('copy-embed-btn').addEventListener('click', async () => {
   try {
-    const images = uploadedImages.map(img => img.src);
+    const images = uploadedImages.map(img => encodeURIComponent(img.src));
     if (images.length === 0) throw new Error('No images to export.');
     // Inline styles for grid and boxes
     const gridStyle = "display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:24px;padding:32px;";
     const boxStyle = "background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.05);overflow:hidden;position:relative;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;cursor:pointer;";
     const imgStyle = "width:100%;height:100%;object-fit:cover;display:block;";
     const gridHtml = `<div id=\"infinity-wall\" style=\"${gridStyle}\">` +
-      images.map(url => `<div class=\"rect-box\" style=\"${boxStyle}\"><img src=\"${url}\" alt=\"Image\" style=\"${imgStyle}\"></div>`).join('') +
+      images.map(url => `<div class=\"rect-box\" style=\"${boxStyle}\"><img src=\"${decodeURIComponent(url)}\" alt=\"Image\" style=\"${imgStyle}\"></div>`).join('') +
       `</div>`;
     await navigator.clipboard.writeText(gridHtml);
     const copyBtn = document.getElementById('copy-embed-btn');
