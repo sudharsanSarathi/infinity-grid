@@ -234,7 +234,15 @@ container.addEventListener('scroll', () => {
   }, 100);
 });
 
+// Prevent grid from moving or refreshing on box clicks (avoid drag/scroll/momentum on click, only allow drag on actual drag events)
+let dragStarted = false;
 container.addEventListener('mousedown', (e) => {
+  // Only start drag if not clicking on a .rect-box
+  if (e.target.classList.contains('rect-box') || e.target.closest('.rect-box')) {
+    dragStarted = false;
+    return;
+  }
+  dragStarted = true;
   isDockDragging = true;
   isUserInteracting = true;
   setBoxTransformTransition(false);
@@ -246,38 +254,44 @@ container.addEventListener('mousedown', (e) => {
   if (dockMomentumId) cancelAnimationFrame(dockMomentumId);
   container.style.cursor = 'grabbing';
 });
-container.addEventListener('mouseleave', () => {
-  if (isDockDragging) {
-    isDockDragging = false;
-    isUserInteracting = false;
-    container.style.cursor = '';
-    snapDockToCenter();
-    setTimeout(() => setBoxTransformTransition(true), 0);
-    setTimeout(() => stopScaleAnimationLoop(), 200);
-  }
-});
-container.addEventListener('mouseup', () => {
-  if (isDockDragging) {
-    isDockDragging = false;
-    isUserInteracting = false;
-    container.style.cursor = '';
-    snapDockToCenter();
-    setTimeout(() => setBoxTransformTransition(true), 0);
-    setTimeout(() => stopScaleAnimationLoop(), 200);
-  }
-});
 container.addEventListener('mousemove', (e) => {
-  if (!isDockDragging) return;
+  if (!isDockDragging || !dragStarted) return;
   e.preventDefault();
   const dx = e.pageX - dockStartX;
   const now = Date.now();
   dockVelocity = (dx) / (now - dockLastMove + 1);
   dockLastMove = now;
   container.scrollLeft = dockScrollLeft - dx;
-  // No per-event scale update
+});
+container.addEventListener('mouseup', () => {
+  if (isDockDragging && dragStarted) {
+    isDockDragging = false;
+    isUserInteracting = false;
+    container.style.cursor = '';
+    snapDockToCenter();
+    setTimeout(() => setBoxTransformTransition(true), 0);
+    setTimeout(() => stopScaleAnimationLoop(), 200);
+  }
+  dragStarted = false;
+});
+container.addEventListener('mouseleave', () => {
+  if (isDockDragging && dragStarted) {
+    isDockDragging = false;
+    isUserInteracting = false;
+    container.style.cursor = '';
+    snapDockToCenter();
+    setTimeout(() => setBoxTransformTransition(true), 0);
+    setTimeout(() => stopScaleAnimationLoop(), 200);
+  }
+  dragStarted = false;
 });
 // Touch events for mobile
 container.addEventListener('touchstart', (e) => {
+  if (e.target.classList.contains('rect-box') || e.target.closest('.rect-box')) {
+    dragStarted = false;
+    return;
+  }
+  dragStarted = true;
   isDockDragging = true;
   isUserInteracting = true;
   setBoxTransformTransition(false);
@@ -288,32 +302,33 @@ container.addEventListener('touchstart', (e) => {
   dockVelocity = 0;
   if (dockMomentumId) cancelAnimationFrame(dockMomentumId);
 });
-container.addEventListener('touchend', () => {
-  if (isDockDragging) {
-    isDockDragging = false;
-    isUserInteracting = false;
-    snapDockToCenter();
-    setTimeout(() => setBoxTransformTransition(true), 0);
-    setTimeout(() => stopScaleAnimationLoop(), 200);
-  }
-});
-container.addEventListener('touchcancel', () => {
-  if (isDockDragging) {
-    isDockDragging = false;
-    isUserInteracting = false;
-    snapDockToCenter();
-    setTimeout(() => setBoxTransformTransition(true), 0);
-    setTimeout(() => stopScaleAnimationLoop(), 200);
-  }
-});
 container.addEventListener('touchmove', (e) => {
-  if (!isDockDragging) return;
+  if (!isDockDragging || !dragStarted) return;
   const dx = e.touches[0].pageX - dockStartX;
   const now = Date.now();
   dockVelocity = (dx) / (now - dockLastMove + 1);
   dockLastMove = now;
   container.scrollLeft = dockScrollLeft - dx;
-  // No per-event scale update
+});
+container.addEventListener('touchend', () => {
+  if (isDockDragging && dragStarted) {
+    isDockDragging = false;
+    isUserInteracting = false;
+    snapDockToCenter();
+    setTimeout(() => setBoxTransformTransition(true), 0);
+    setTimeout(() => stopScaleAnimationLoop(), 200);
+  }
+  dragStarted = false;
+});
+container.addEventListener('touchcancel', () => {
+  if (isDockDragging && dragStarted) {
+    isDockDragging = false;
+    isUserInteracting = false;
+    snapDockToCenter();
+    setTimeout(() => setBoxTransformTransition(true), 0);
+    setTimeout(() => stopScaleAnimationLoop(), 200);
+  }
+  dragStarted = false;
 });
 
 // --- Apple Watch Dock-like Momentum for 2D Grid ---
@@ -613,8 +628,13 @@ function showExpandedModal(imgSrc) {
     // Wrap the modal to the image's natural size, clamped to viewport
     const naturalW = img.naturalWidth;
     const naturalH = img.naturalHeight;
-    const maxW = window.innerWidth * 0.98;
-    const maxH = window.innerHeight * 0.98;
+    let maxW = window.innerWidth * 0.98;
+    let maxH = window.innerHeight * 0.98;
+    // For mobile, scale down by 25%
+    if (window.innerWidth <= 600) {
+      maxW = window.innerWidth * 0.75;
+      maxH = window.innerHeight * 0.75;
+    }
     let w = naturalW, h = naturalH;
     if (w > maxW) {
       h = h * (maxW / w);
@@ -965,22 +985,29 @@ document.getElementById('download-grid-html-btn').addEventListener('click', () =
   document.body.removeChild(a);
 });
 
-// Add top/bottom blending gradient overlay
+// Place the top/bottom gradient overlay over the infinity wall container so it stays visible during scroll
 (function setupTopBottomGradientOverlay() {
   let overlay = document.getElementById('top-bottom-gradient-overlay');
   if (!overlay) {
     overlay = document.createElement('div');
     overlay.id = 'top-bottom-gradient-overlay';
-    overlay.style.position = 'fixed';
+    overlay.style.position = 'absolute';
     overlay.style.left = '0';
     overlay.style.right = '0';
     overlay.style.top = '0';
-    overlay.style.height = '100vh';
+    overlay.style.height = '100%';
     overlay.style.pointerEvents = 'none';
-    overlay.style.zIndex = '5';
-    overlay.style.width = '100vw';
+    overlay.style.zIndex = '10';
+    overlay.style.width = '100%';
     overlay.style.background = 'none';
-    document.body.appendChild(overlay);
+    // Place overlay inside the infinity wall container
+    const container = document.getElementById('infinity-wall-container');
+    if (container) {
+      container.style.position = 'relative';
+      container.appendChild(overlay);
+    } else {
+      document.body.appendChild(overlay);
+    }
   }
 })();
 
