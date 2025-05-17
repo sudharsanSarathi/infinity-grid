@@ -855,4 +855,45 @@ document.getElementById('copy-embed-btn').addEventListener('click', async () => 
     console.error('Failed to copy embed code:', error);
     alert('Failed to copy embed code. Please try again.');
   }
+});
+
+// --- Copy iframe (srcdoc) ---
+document.getElementById('copy-iframe-srcdoc-btn').addEventListener('click', async () => {
+  try {
+    const images = uploadedImages.map(img => encodeURIComponent(img.src));
+    if (images.length === 0) throw new Error('No images to export.');
+    const gridStyle = "display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:24px;padding:32px;";
+    const boxStyle = "background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.05);overflow:hidden;position:relative;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;cursor:pointer;";
+    const imgStyle = "width:100%;height:100%;object-fit:cover;display:block;";
+    const gridHtml = `<div id=\"infinity-wall\" style=\"${gridStyle}\">` +
+      images.map(url => `<div class=\"rect-box\" style=\"${boxStyle}\"><img src=\"${decodeURIComponent(url)}\" alt=\"Image\" style=\"${imgStyle}\"></div>`).join('') +
+      `</div>`;
+    const iframe = `<iframe srcdoc='${gridHtml.replace(/'/g, "&apos;")}' width="100%" height="600" frameborder="0"></iframe>`;
+    await navigator.clipboard.writeText(iframe);
+    const btn = document.getElementById('copy-iframe-srcdoc-btn');
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = orig; }, 2000);
+  } catch (error) {
+    alert('Failed to copy iframe: ' + error.message);
+  }
+});
+
+// --- Copy iframe (URL) ---
+document.getElementById('copy-iframe-url-btn').addEventListener('click', async () => {
+  try {
+    const images = uploadedImages.map(img => img.src);
+    if (images.length === 0) throw new Error('No images to export.');
+    const imageString = encodeURIComponent(images.join(','));
+    const colorString = encodeURIComponent(currentBgColor);
+    const url = `${window.location.origin}/grid.html?images=${imageString}&bg=${colorString}`;
+    const iframe = `<iframe src="${url}" width="100%" height="600" frameborder="0"></iframe>`;
+    await navigator.clipboard.writeText(iframe);
+    const btn = document.getElementById('copy-iframe-url-btn');
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = orig; }, 2000);
+  } catch (error) {
+    alert('Failed to copy iframe: ' + error.message);
+  }
 }); 
