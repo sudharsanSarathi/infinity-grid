@@ -306,12 +306,20 @@ body, html {
     padding: 16px 8px;
   }
   #infinity-wall-container {
-    height: 70vh;
-    min-height: 60vw;
+    height: 100vh;
+    min-height: 100vh;
     max-height: 100vh;
+    padding-left: 24px;
+    padding-right: 24px;
+    box-sizing: border-box;
   }
   #infinity-wall {
     gap: 55px;
+    min-height: 100vh;
+    height: 100vh;
+    box-sizing: border-box;
+    padding-left: 24px;
+    padding-right: 24px;
   }
   .rect-box {
     width: 80px;
@@ -331,6 +339,15 @@ body, html {
   }
   .rect-box[style*='scale'] {
     padding: 24px !important;
+  }
+  #modal-img {
+    max-width: calc(100vw - 48px);
+    max-height: calc(100vh - 48px);
+    width: auto;
+    height: auto;
+    object-fit: unset !important;
+    display: block;
+    margin: 0 auto;
   }
 }
 

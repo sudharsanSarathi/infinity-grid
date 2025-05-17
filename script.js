@@ -591,10 +591,13 @@ function showExpandedModal(imgSrc) {
   const img = document.createElement('img');
   const src = imgSrc.startsWith('http') ? imgSrc : '/images/' + imgSrc;
   img.src = src;
-  img.style.width = '100%';
-  img.style.height = '100%';
-  img.style.objectFit = 'contain';
   img.style.display = 'block';
+  // Only set width/height for desktop, let CSS handle mobile
+  if (window.innerWidth > 600) {
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.objectFit = 'contain';
+  }
   imgWrap.appendChild(img);
   // Close button
   const closeBtn = document.createElement('button');
