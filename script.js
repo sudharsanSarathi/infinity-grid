@@ -112,12 +112,22 @@ window.addEventListener('load', async () => {
     if (imagesParam) {
       const urls = decodeURIComponent(imagesParam).split(',').map(u => u.trim()).filter(Boolean);
       uploadedImages = urls.map(url => ({ src: url }));
+      // Immediately render the grid
+      renderAppleGrid();
     }
     if (bgParam) {
       currentBgColor = decodeURIComponent(bgParam);
       updateBackgrounds(currentBgColor);
       if (bgColorInput) bgColorInput.value = currentBgColor;
     }
+    // Set body and html height to match the grid
+    window.addEventListener('DOMContentLoaded', () => {
+      const grid = document.getElementById('infinity-wall');
+      if (grid) {
+        document.body.style.height = grid.offsetHeight + 'px';
+        document.documentElement.style.height = grid.offsetHeight + 'px';
+      }
+    });
   })();
 });
 
@@ -479,7 +489,8 @@ function renderAppleGrid(targetWall = wall, imagesOverride = null, hideEmbedBtn 
       let hasImg = false;
       if (uploadedImages.length > 0 || (uploadedImages.length === 0 && images[imgIdx])) {
         const img = document.createElement('img');
-        img.src = images[imgIdx];
+        const src = images[imgIdx].startsWith('http') ? images[imgIdx] : '/images/' + images[imgIdx];
+        img.src = src;
         img.style.width = '100%';
         img.style.height = '100%';
         img.style.objectFit = 'cover';
@@ -578,7 +589,8 @@ function showExpandedModal(imgSrc) {
     imgWrap.style.height = '60vh';
   }
   const img = document.createElement('img');
-  img.src = imgSrc;
+  const src = imgSrc.startsWith('http') ? imgSrc : '/images/' + imgSrc;
+  img.src = src;
   img.style.width = '100%';
   img.style.height = '100%';
   img.style.objectFit = 'contain';
@@ -896,4 +908,27 @@ document.getElementById('copy-iframe-url-btn').addEventListener('click', async (
   } catch (error) {
     alert('Failed to copy iframe: ' + error.message);
   }
+});
+
+// --- Download Grid HTML ---
+document.getElementById('download-grid-html-btn').addEventListener('click', () => {
+  const images = uploadedImages.map(img => img.src);
+  if (images.length === 0) {
+    alert('No images to export.');
+    return;
+  }
+  const gridStyle = "display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:24px;padding:32px;";
+  const boxStyle = "background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.05);overflow:hidden;position:relative;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;cursor:pointer;";
+  const imgStyle = "width:100%;height:100%;object-fit:cover;display:block;";
+  const gridHtml = `<div id=\"infinity-wall\" style=\"${gridStyle}\">` +
+    images.map(url => `<div class=\"rect-box\" style=\"${boxStyle}\"><img src=\"${url}\" alt=\"Image\" style=\"${imgStyle}\"></div>`).join('') +
+    `</div>`;
+  const html = `<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<title>Infinity Wall Export</title>\n<style>body{margin:0;padding:0;background:#EEECE5;font-family:'Inter','Segoe UI',Arial,sans-serif;}#infinity-wall-container{width:100vw;height:100vh;overflow:auto;}#infinity-wall{${gridStyle}}.rect-box{${boxStyle}}.rect-box img{${imgStyle}}</style>\n</head>\n<body>\n<div id=\"infinity-wall-container\">${gridHtml}</div>\n</body>\n</html>`;
+  const blob = new Blob([html.replace(/\\n/g, '\n').replace(/\\"/g, '"')], {type: 'text/html'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'infinity-wall-grid.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }); 
