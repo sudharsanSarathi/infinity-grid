@@ -896,27 +896,4 @@ document.getElementById('copy-iframe-url-btn').addEventListener('click', async (
   } catch (error) {
     alert('Failed to copy iframe: ' + error.message);
   }
-});
-
-// --- Download Grid HTML ---
-document.getElementById('download-grid-html-btn').addEventListener('click', () => {
-  const images = uploadedImages.map(img => img.src);
-  if (images.length === 0) {
-    alert('No images to export.');
-    return;
-  }
-  const gridStyle = "display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:24px;padding:32px;";
-  const boxStyle = "background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.05);overflow:hidden;position:relative;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;cursor:pointer;";
-  const imgStyle = "width:100%;height:100%;object-fit:cover;display:block;";
-  const gridHtml = `<div id=\"infinity-wall\" style=\"${gridStyle}\">` +
-    images.map(url => `<div class=\"rect-box\" style=\"${boxStyle}\"><img src=\"${url}\" alt=\"Image\" style=\"${imgStyle}\"></div>`).join('') +
-    `</div>`;
-  const html = `<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<title>Infinity Wall Export</title>\n<style>body{margin:0;padding:0;background:#EEECE5;font-family:'Inter','Segoe UI',Arial,sans-serif;}#infinity-wall-container{width:100vw;height:100vh;overflow:auto;}#infinity-wall{${gridStyle}}.rect-box{${boxStyle}}.rect-box img{${imgStyle}}</style>\n</head>\n<body>\n<div id=\"infinity-wall-container\">${gridHtml}</div>\n</body>\n</html>`;
-  const blob = new Blob([html.replace(/\\n/g, '\n').replace(/\\"/g, '"')], {type: 'text/html'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'infinity-wall-grid.html';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
 }); 
