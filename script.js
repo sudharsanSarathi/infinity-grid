@@ -578,15 +578,15 @@ function showExpandedModal(imgSrc) {
   imgWrap.style.alignItems = 'center';
   imgWrap.style.justifyContent = 'center';
   imgWrap.style.maxWidth = '90vw';
-  imgWrap.style.maxHeight = '80vh';
-  imgWrap.style.width = 'min(90vw, 600px)';
-  imgWrap.style.height = 'min(80vh, 600px)';
+  imgWrap.style.maxHeight = '90vh';
+  imgWrap.style.width = 'auto';
+  imgWrap.style.height = 'auto';
   // Mobile override
   if (window.innerWidth <= 600) {
     imgWrap.style.maxWidth = '98vw';
     imgWrap.style.maxHeight = '60vh';
-    imgWrap.style.width = '98vw';
-    imgWrap.style.height = '60vh';
+    imgWrap.style.width = 'auto';
+    imgWrap.style.height = 'auto';
   }
   const img = document.createElement('img');
   const src = imgSrc.startsWith('http') ? imgSrc : '/images/' + imgSrc;
@@ -617,9 +617,10 @@ function showExpandedModal(imgSrc) {
   };
   imgWrap.appendChild(closeBtn);
   modal.appendChild(imgWrap);
-  // Close on click outside
+  // Do NOT close on background click
   modal.onclick = (e) => {
-    if (e.target === modal) {
+    // Only close if clicking the close button
+    if (e.target === closeBtn) {
       modal.style.display = 'none';
     }
   };
