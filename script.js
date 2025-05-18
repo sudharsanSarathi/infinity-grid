@@ -244,9 +244,7 @@ container.addEventListener('mousedown', (e) => {
   }
   dragStarted = true;
   isDockDragging = true;
-  isUserInteracting = true;
-  setBoxTransformTransition(false);
-  startScaleAnimationLoop();
+  disableScaleEffectForDrag();
   dockStartX = e.pageX;
   dockScrollLeft = container.scrollLeft;
   dockLastMove = Date.now();
@@ -266,22 +264,18 @@ container.addEventListener('mousemove', (e) => {
 container.addEventListener('mouseup', () => {
   if (isDockDragging && dragStarted) {
     isDockDragging = false;
-    isUserInteracting = false;
+    enableScaleEffectAfterDrag();
     container.style.cursor = '';
     snapDockToCenter();
-    setTimeout(() => setBoxTransformTransition(true), 0);
-    setTimeout(() => stopScaleAnimationLoop(), 200);
   }
   dragStarted = false;
 });
 container.addEventListener('mouseleave', () => {
   if (isDockDragging && dragStarted) {
     isDockDragging = false;
-    isUserInteracting = false;
+    enableScaleEffectAfterDrag();
     container.style.cursor = '';
     snapDockToCenter();
-    setTimeout(() => setBoxTransformTransition(true), 0);
-    setTimeout(() => stopScaleAnimationLoop(), 200);
   }
   dragStarted = false;
 });
@@ -293,9 +287,7 @@ container.addEventListener('touchstart', (e) => {
   }
   dragStarted = true;
   isDockDragging = true;
-  isUserInteracting = true;
-  setBoxTransformTransition(false);
-  startScaleAnimationLoop();
+  disableScaleEffectForDrag();
   dockStartX = e.touches[0].pageX;
   dockScrollLeft = container.scrollLeft;
   dockLastMove = Date.now();
@@ -313,20 +305,16 @@ container.addEventListener('touchmove', (e) => {
 container.addEventListener('touchend', () => {
   if (isDockDragging && dragStarted) {
     isDockDragging = false;
-    isUserInteracting = false;
+    enableScaleEffectAfterDrag();
     snapDockToCenter();
-    setTimeout(() => setBoxTransformTransition(true), 0);
-    setTimeout(() => stopScaleAnimationLoop(), 200);
   }
   dragStarted = false;
 });
 container.addEventListener('touchcancel', () => {
   if (isDockDragging && dragStarted) {
     isDockDragging = false;
-    isUserInteracting = false;
+    enableScaleEffectAfterDrag();
     snapDockToCenter();
-    setTimeout(() => setBoxTransformTransition(true), 0);
-    setTimeout(() => stopScaleAnimationLoop(), 200);
   }
   dragStarted = false;
 });
@@ -338,9 +326,7 @@ let velocityX = 0, velocityY = 0, momentumFrame = null;
 
 container.addEventListener('mousedown', (e) => {
   isDragging = true;
-  isUserInteracting = true;
-  setBoxTransformTransition(false);
-  startScaleAnimationLoop();
+  disableScaleEffectForDrag();
   dragStartX = dragLastX = e.pageX;
   dragStartY = dragLastY = e.pageY;
   dragScrollLeft = container.scrollLeft;
@@ -353,21 +339,17 @@ container.addEventListener('mousedown', (e) => {
 container.addEventListener('mouseleave', () => {
   if (isDragging) {
     isDragging = false;
-    isUserInteracting = false;
+    enableScaleEffectAfterDrag();
     container.style.cursor = '';
     startMomentum();
-    setTimeout(() => setBoxTransformTransition(true), 0);
-    setTimeout(() => stopScaleAnimationLoop(), 200);
   }
 });
 container.addEventListener('mouseup', () => {
   if (isDragging) {
     isDragging = false;
-    isUserInteracting = false;
+    enableScaleEffectAfterDrag();
     container.style.cursor = '';
     startMomentum();
-    setTimeout(() => setBoxTransformTransition(true), 0);
-    setTimeout(() => stopScaleAnimationLoop(), 200);
   }
 });
 container.addEventListener('mousemove', (e) => {
@@ -383,13 +365,10 @@ container.addEventListener('mousemove', (e) => {
   dragLastTime = now;
   container.scrollLeft -= dx;
   container.scrollTop -= dy;
-  // No per-event scale update
 });
 container.addEventListener('touchstart', (e) => {
   isDragging = true;
-  isUserInteracting = true;
-  setBoxTransformTransition(false);
-  startScaleAnimationLoop();
+  disableScaleEffectForDrag();
   dragStartX = dragLastX = e.touches[0].pageX;
   dragStartY = dragLastY = e.touches[0].pageY;
   dragScrollLeft = container.scrollLeft;
@@ -401,19 +380,15 @@ container.addEventListener('touchstart', (e) => {
 container.addEventListener('touchend', () => {
   if (isDragging) {
     isDragging = false;
-    isUserInteracting = false;
+    enableScaleEffectAfterDrag();
     startMomentum();
-    setTimeout(() => setBoxTransformTransition(true), 0);
-    setTimeout(() => stopScaleAnimationLoop(), 200);
   }
 });
 container.addEventListener('touchcancel', () => {
   if (isDragging) {
     isDragging = false;
-    isUserInteracting = false;
+    enableScaleEffectAfterDrag();
     startMomentum();
-    setTimeout(() => setBoxTransformTransition(true), 0);
-    setTimeout(() => stopScaleAnimationLoop(), 200);
   }
 });
 container.addEventListener('touchmove', (e) => {
@@ -428,7 +403,6 @@ container.addEventListener('touchmove', (e) => {
   dragLastTime = now;
   container.scrollLeft -= dx;
   container.scrollTop -= dy;
-  // No per-event scale update
 });
 
 function getImages() {
@@ -821,27 +795,50 @@ function applyParallaxAndScaleEffect() {
   const boxes = document.querySelectorAll('.rect-box');
   const viewportCenterX = window.innerWidth / 2;
   const viewportCenterY = window.innerHeight / 2;
-  const maxScale = 1.5; // Restored to previous value
+  const maxScale = 1.5;
   const minScale = 1.0;
+  const unfocusedScale = 0.8; // 20% smaller
   const maxDist = Math.sqrt((window.innerWidth/2)**2 + (window.innerHeight/2)**2);
-  // On mobile, suppress scale effect during drag
-  if (window.innerWidth <= 600 && window.__suppressScaleEffect) {
+
+  // If dragging or user interacting, suppress scale effect for smoothness
+  if (isDragging || isDockDragging || isUserInteracting || (window.innerWidth <= 600 && window.__suppressScaleEffect)) {
     boxes.forEach(box => {
       box.style.transform = '';
       box.style.zIndex = '';
     });
     return;
   }
+
+  // Find the focused box (closest to center)
+  let minDist = Infinity, focusedBox = null;
   boxes.forEach(box => {
     const rect = box.getBoundingClientRect();
     const cellCenterX = rect.left + rect.width / 2;
     const cellCenterY = rect.top + rect.height / 2;
     const dist = Math.sqrt((cellCenterX - viewportCenterX) ** 2 + (cellCenterY - viewportCenterY) ** 2);
-    let t = Math.min(dist / (maxDist * 0.5), 1); // 0 at center, 1 at half-diagonal
-    t = t * t; // quadratic falloff
-    const scale = minScale + (maxScale - minScale) * (1 - t);
-    box.style.transform = `scale(${scale})`;
-    box.style.zIndex = Math.round(scale * 100);
+    if (dist < minDist) {
+      minDist = dist;
+      focusedBox = box;
+    }
+  });
+
+  boxes.forEach(box => {
+    if (box === focusedBox) {
+      // Focused box: scale as before
+      const rect = box.getBoundingClientRect();
+      const cellCenterX = rect.left + rect.width / 2;
+      const cellCenterY = rect.top + rect.height / 2;
+      const dist = Math.sqrt((cellCenterX - viewportCenterX) ** 2 + (cellCenterY - viewportCenterY) ** 2);
+      let t = Math.min(dist / (maxDist * 0.5), 1);
+      t = t * t;
+      const scale = minScale + (maxScale - minScale) * (1 - t);
+      box.style.transform = `scale(${scale})`;
+      box.style.zIndex = Math.round(scale * 100);
+    } else {
+      // Unfocused boxes: scale down by 20%
+      box.style.transform = `scale(${unfocusedScale})`;
+      box.style.zIndex = '';
+    }
   });
 }
 
@@ -1104,4 +1101,24 @@ container.addEventListener('touchcancel', (e) => {
     window.__suppressScaleEffect = false;
     setTimeout(applyParallaxAndScaleEffect, 10);
   }
-}); 
+});
+
+// --- Make drag/scroll buttery smooth by disabling scale effect during drag ---
+// Add to all drag start events:
+function disableScaleEffectForDrag() {
+  isUserInteracting = true;
+  setBoxTransformTransition(false);
+  // Remove scale effect for all boxes
+  const boxes = document.querySelectorAll('.rect-box');
+  boxes.forEach(box => {
+    box.style.transform = '';
+    box.style.zIndex = '';
+  });
+}
+function enableScaleEffectAfterDrag() {
+  isUserInteracting = false;
+  setBoxTransformTransition(true);
+  setTimeout(() => {
+    applyParallaxAndScaleEffect();
+  }, 10);
+} 
