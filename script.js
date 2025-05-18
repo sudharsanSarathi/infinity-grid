@@ -809,7 +809,9 @@ function applyParallaxAndScaleEffect() {
     return;
   }
 
-  // Find the focused box (closest to center)
+  // Find the closest N boxes to the center (expanded focus area)
+  let focusAreaDist = (maxDist * 0.5) * 1.5; // 50% larger focus area
+  let focusBoxes = [];
   let minDist = Infinity, focusedBox = null;
   boxes.forEach(box => {
     const rect = box.getBoundingClientRect();
@@ -820,22 +822,28 @@ function applyParallaxAndScaleEffect() {
       minDist = dist;
       focusedBox = box;
     }
+    if (dist < focusAreaDist) {
+      focusBoxes.push({ box, dist });
+    }
   });
 
+  // Sort by distance to center
+  focusBoxes.sort((a, b) => a.dist - b.dist);
+
+  // Gradual scale for focus area
+  const gradSteps = focusBoxes.length > 1 ? focusBoxes.length - 1 : 1;
+  focusBoxes.forEach((item, i) => {
+    let t = i / gradSteps; // 0 for most center, 1 for farthest in focus area
+    // Quadratic for smoother falloff
+    t = t * t;
+    const scale = minScale + (maxScale - minScale) * (1 - t);
+    item.box.style.transform = `scale(${scale})`;
+    item.box.style.zIndex = Math.round(scale * 100);
+  });
+
+  // All other boxes: scale down
   boxes.forEach(box => {
-    if (box === focusedBox) {
-      // Focused box: scale as before
-      const rect = box.getBoundingClientRect();
-      const cellCenterX = rect.left + rect.width / 2;
-      const cellCenterY = rect.top + rect.height / 2;
-      const dist = Math.sqrt((cellCenterX - viewportCenterX) ** 2 + (cellCenterY - viewportCenterY) ** 2);
-      let t = Math.min(dist / (maxDist * 0.5), 1);
-      t = t * t;
-      const scale = minScale + (maxScale - minScale) * (1 - t);
-      box.style.transform = `scale(${scale})`;
-      box.style.zIndex = Math.round(scale * 100);
-    } else {
-      // Unfocused boxes: scale down by 20%
+    if (!focusBoxes.some(fb => fb.box === box)) {
       box.style.transform = `scale(${unfocusedScale})`;
       box.style.zIndex = '';
     }
@@ -1049,23 +1057,31 @@ function addBoxHoverScale() {
 }
 addBoxHoverScale();
 
-// --- Make scroll on mobile smooth, seamless, and multi-directional ---
-container.style.scrollBehavior = 'smooth';
+// --- Ultra-smooth mobile drag using requestAnimationFrame ---
+let rafTouchMove = null;
+let lastTouchMove = null;
 container.addEventListener('touchmove', (e) => {
   if (!isDragging) return;
   e.preventDefault(); // Prevent native scroll bounce
-  const now = Date.now();
-  const dx = e.touches[0].pageX - dragLastX;
-  const dy = e.touches[0].pageY - dragLastY;
-  // Use direct deltas for buttery smoothness
-  container.scrollLeft -= dx;
-  container.scrollTop -= dy;
-  // Update last positions and time for momentum
-  velocityX = dx;
-  velocityY = dy;
-  dragLastX = e.touches[0].pageX;
-  dragLastY = e.touches[0].pageY;
-  dragLastTime = now;
+  lastTouchMove = e;
+  if (!rafTouchMove) {
+    rafTouchMove = requestAnimationFrame(() => {
+      if (!lastTouchMove) return;
+      const now = Date.now();
+      const dx = lastTouchMove.touches[0].pageX - dragLastX;
+      const dy = lastTouchMove.touches[0].pageY - dragLastY;
+      // Use direct deltas for buttery smoothness
+      container.scrollLeft -= dx;
+      container.scrollTop -= dy;
+      // Update last positions and time for momentum
+      velocityX = dx;
+      velocityY = dy;
+      dragLastX = lastTouchMove.touches[0].pageX;
+      dragLastY = lastTouchMove.touches[0].pageY;
+      dragLastTime = now;
+      rafTouchMove = null;
+    });
+  }
 }, { passive: false });
 
 // --- Prevent grid movement or auto-adjust when clicking a box (handle misclicks) ---
