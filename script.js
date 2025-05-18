@@ -449,10 +449,8 @@ function animateScrollStep() {
 function renderAppleGrid(targetWall = wall, imagesOverride = null, hideEmbedBtn = false) {
   targetWall.innerHTML = '';
   const boxSize = window.innerWidth <= 600 ? 80 : 120;
-  // Reduce gap by 10% overall, and by an additional 10% on mobile (total 19% reduction on mobile)
-  const baseGapDesktop = Math.round(54 * 0.9); // 10% less
-  const baseGapMobile = Math.round(30 * 0.9 * 0.9); // 19% less
-  const gapSize = window.innerWidth <= 600 ? baseGapMobile : baseGapDesktop;
+  // Restore original gap calculation
+  const gapSize = window.innerWidth <= 600 ? Math.round(30 * 1.3 * 1.3) : Math.round(54 * 1.3 * 1.3); // Increased gap
   const visibleCols = Math.ceil(window.innerWidth / (boxSize + gapSize));
   const visibleRows = Math.ceil(window.innerHeight / (boxSize + gapSize));
   const COLS = visibleCols * 3;
