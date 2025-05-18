@@ -809,8 +809,8 @@ function applyParallaxAndScaleEffect() {
     return;
   }
 
-  // Find the closest N boxes to the center (expanded focus area)
-  let focusAreaDist = (maxDist * 0.5) * 1.5; // 50% larger focus area
+  // Find the closest N boxes to the center (reduced focus area)
+  let focusAreaDist = (maxDist * 0.3) * 1.5; // 30% focus area (was 0.5)
   let focusBoxes = [];
   let minDist = Infinity, focusedBox = null;
   boxes.forEach(box => {
@@ -1137,4 +1137,60 @@ function enableScaleEffectAfterDrag() {
   setTimeout(() => {
     applyParallaxAndScaleEffect();
   }, 10);
-} 
+}
+
+// --- Stretch effect at grid edges ---
+(function addGridEdgeStretchEffect() {
+  let isEdgeStretching = false;
+  let stretchTimeout = null;
+  const stretchAmount = 36; // px
+  const stretchDuration = 180; // ms
+
+  function doStretch(axis, direction) {
+    if (isEdgeStretching) return;
+    isEdgeStretching = true;
+    const wall = document.getElementById('infinity-wall');
+    if (!wall) return;
+    wall.style.transition = `transform ${stretchDuration}ms cubic-bezier(0.4,0,0.2,1)`;
+    if (axis === 'x') {
+      wall.style.transform = `translateX(${direction * stretchAmount}px)`;
+    } else {
+      wall.style.transform = `translateY(${direction * stretchAmount}px)`;
+    }
+    clearTimeout(stretchTimeout);
+    stretchTimeout = setTimeout(() => {
+      wall.style.transform = '';
+      wall.style.transition = '';
+      isEdgeStretching = false;
+    }, stretchDuration);
+  }
+
+  function checkAndStretchEdge() {
+    const container = document.getElementById('infinity-wall-container');
+    const wall = document.getElementById('infinity-wall');
+    if (!container || !wall) return;
+    // Horizontal
+    if (container.scrollLeft <= 0) {
+      doStretch('x', 1); // left edge
+    } else if (container.scrollLeft + container.clientWidth >= wall.scrollWidth - 2) {
+      doStretch('x', -1); // right edge
+    }
+    // Vertical
+    if (container.scrollTop <= 0) {
+      doStretch('y', 1); // top edge
+    } else if (container.scrollTop + container.clientHeight >= wall.scrollHeight - 2) {
+      doStretch('y', -1); // bottom edge
+    }
+  }
+
+  // Listen to scroll and drag end events
+  container.addEventListener('scroll', () => {
+    if (!isDragging && !isDockDragging) checkAndStretchEdge();
+  });
+  container.addEventListener('mouseup', () => {
+    setTimeout(checkAndStretchEdge, 10);
+  });
+  container.addEventListener('touchend', () => {
+    setTimeout(checkAndStretchEdge, 10);
+  });
+})(); 
