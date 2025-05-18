@@ -448,11 +448,11 @@ function animateScrollStep() {
  */
 function renderAppleGrid(targetWall = wall, imagesOverride = null, hideEmbedBtn = false) {
   targetWall.innerHTML = '';
-  // Reduce gap by 30% and make it proportional for mobile
-  const baseGap = window.innerWidth <= 600 ? 30 : 54;
-  const reducedGap = Math.round(baseGap * 0.7); // 30% less
-  const gapSize = window.innerWidth <= 600 ? Math.round(reducedGap * 1.3) : reducedGap;
   const boxSize = window.innerWidth <= 600 ? 80 : 120;
+  // Reduce gap by 10% overall, and by an additional 10% on mobile (total 19% reduction on mobile)
+  const baseGapDesktop = Math.round(54 * 0.9); // 10% less
+  const baseGapMobile = Math.round(30 * 0.9 * 0.9); // 19% less
+  const gapSize = window.innerWidth <= 600 ? baseGapMobile : baseGapDesktop;
   const visibleCols = Math.ceil(window.innerWidth / (boxSize + gapSize));
   const visibleRows = Math.ceil(window.innerHeight / (boxSize + gapSize));
   const COLS = visibleCols * 3;
@@ -812,8 +812,8 @@ function applyParallaxAndScaleEffect() {
     return;
   }
 
-  // Find the closest N boxes to the center (minimum 4 focused, more if within focus area)
-  let focusAreaDist = (maxDist * 0.22) * 1.2; // Slightly smaller focus area for more intuition
+  // Find the closest N boxes to the center (reduced focus area)
+  let focusAreaDist = (maxDist * 0.3) * 1.5; // 30% focus area (was 0.5)
   let focusBoxes = [];
   let minDist = Infinity, focusedBox = null;
   boxes.forEach(box => {
@@ -829,38 +829,26 @@ function applyParallaxAndScaleEffect() {
       focusBoxes.push({ box, dist });
     }
   });
-  // Always at least 4 focused boxes (closest to center)
-  if (focusBoxes.length < 4) {
-    // Get all boxes with their distance, sort, and take 4 closest
-    let allBoxes = Array.from(boxes).map(box => {
-      const rect = box.getBoundingClientRect();
-      const cellCenterX = rect.left + rect.width / 2;
-      const cellCenterY = rect.top + rect.height / 2;
-      const dist = Math.sqrt((cellCenterX - viewportCenterX) ** 2 + (cellCenterY - viewportCenterY) ** 2);
-      return { box, dist };
-    });
-    allBoxes.sort((a, b) => a.dist - b.dist);
-    focusBoxes = allBoxes.slice(0, 4);
-  }
+
   // Sort by distance to center
   focusBoxes.sort((a, b) => a.dist - b.dist);
+
   // Gradual scale for focus area
   const gradSteps = focusBoxes.length > 1 ? focusBoxes.length - 1 : 1;
   focusBoxes.forEach((item, i) => {
     let t = i / gradSteps; // 0 for most center, 1 for farthest in focus area
+    // Quadratic for smoother falloff
     t = t * t;
     const scale = minScale + (maxScale - minScale) * (1 - t);
     item.box.style.transform = `scale(${scale})`;
     item.box.style.zIndex = Math.round(scale * 100);
-    // Optionally, add a more visible focus effect (e.g., box shadow)
-    item.box.style.boxShadow = '0 0 0 3px rgba(0,0,0,0.08)';
   });
-  // All other boxes: scale down and remove focus effect
+
+  // All other boxes: scale down
   boxes.forEach(box => {
     if (!focusBoxes.some(fb => fb.box === box)) {
       box.style.transform = `scale(${unfocusedScale})`;
       box.style.zIndex = '';
-      box.style.boxShadow = '';
     }
   });
 }
@@ -1170,7 +1158,7 @@ function enableScaleEffectAfterDrag() {
     if (axis === 'x') {
       wall.style.transform = `translateX(${direction * stretchAmount}px)`;
     }
-    // Only horizontal (left/right) stretch is allowed now
+    // No vertical stretch
     clearTimeout(stretchTimeout);
     stretchTimeout = setTimeout(() => {
       wall.style.transform = '';
@@ -1189,7 +1177,6 @@ function enableScaleEffectAfterDrag() {
     } else if (container.scrollLeft + container.clientWidth >= wall.scrollWidth - 2) {
       doStretch('x', -1); // right edge
     }
-    // No vertical stretch
   }
 
   // Listen to scroll and drag end events
