@@ -221,7 +221,7 @@ function stopScaleAnimationLoop() {
 function scaleAnimationFrame() {
   applyParallaxAndScaleEffect();
   if (isAnimating) {
-    requestAnimationFrame(scaleAnimationFrame);
+    setTimeout(() => requestAnimationFrame(scaleAnimationFrame), 8); // ~120fps, faster
   }
 }
 
@@ -624,13 +624,12 @@ function showExpandedModal(imgSrc) {
   img.style.width = 'auto';
   img.style.height = 'auto';
   img.style.objectFit = 'contain';
-  img.onload = function() {
-    // Wrap the modal to the image's natural size, clamped to viewport
+  // Responsive: update modal size on load and on resize
+  function updateModalSize() {
     const naturalW = img.naturalWidth;
     const naturalH = img.naturalHeight;
     let maxW = window.innerWidth * 0.98;
     let maxH = window.innerHeight * 0.98;
-    // For mobile, scale down by 25%
     if (window.innerWidth <= 600) {
       maxW = window.innerWidth * 0.75;
       maxH = window.innerHeight * 0.75;
@@ -646,7 +645,9 @@ function showExpandedModal(imgSrc) {
     }
     imgWrap.style.width = w + 'px';
     imgWrap.style.height = h + 'px';
-  };
+  }
+  img.onload = updateModalSize;
+  window.addEventListener('resize', updateModalSize);
   imgWrap.appendChild(img);
   // Close button
   const closeBtn = document.createElement('button');
@@ -666,13 +667,15 @@ function showExpandedModal(imgSrc) {
   closeBtn.onclick = (e) => {
     e.stopPropagation();
     modal.style.display = 'none';
+    window.removeEventListener('resize', updateModalSize);
   };
   imgWrap.appendChild(closeBtn);
   modal.appendChild(imgWrap);
-  // Only close on close button
+  // Close on overlay background click (not on image or close button)
   modal.onclick = (e) => {
-    if (e.target === closeBtn) {
+    if (e.target === modal) {
       modal.style.display = 'none';
+      window.removeEventListener('resize', updateModalSize);
     }
   };
 }
@@ -1017,4 +1020,57 @@ function updateTopBottomGradientOverlay(color) {
   // Convert hex to rgb
   const [r, g, b] = hexToRgb(color);
   overlay.style.background = `linear-gradient(to bottom, rgba(${r},${g},${b},0.95) 0%, rgba(${r},${g},${b},0.0) 8%, rgba(${r},${g},${b},0.0) 92%, rgba(${r},${g},${b},0.95) 100%)`;
-} 
+}
+
+// --- Add scale on hover for .rect-box ---
+function addBoxHoverScale() {
+  document.addEventListener('mouseover', function(e) {
+    if (e.target.classList.contains('rect-box')) {
+      e.target.style.transition = 'transform 0.12s cubic-bezier(0.4,0,0.2,1)';
+      e.target.style.transform += ' scale(1.08)';
+      e.target.style.zIndex = 999;
+    }
+  });
+  document.addEventListener('mouseout', function(e) {
+    if (e.target.classList.contains('rect-box')) {
+      e.target.style.transition = 'transform 0.18s cubic-bezier(0.4,0,0.2,1)';
+      // Remove only the hover scale, keep parallax scale
+      let t = e.target.style.transform.replace(/ scale\(1\.08\)/, '');
+      e.target.style.transform = t;
+      e.target.style.zIndex = '';
+    }
+  });
+}
+addBoxHoverScale();
+
+// --- Make scroll on mobile smooth, seamless, and multi-directional ---
+container.style.scrollBehavior = 'smooth';
+container.addEventListener('touchmove', (e) => {
+  if (!isDragging) return;
+  e.preventDefault(); // Prevent native scroll bounce
+  const now = Date.now();
+  const dx = e.touches[0].pageX - dragLastX;
+  const dy = e.touches[0].pageY - dragLastY;
+  velocityX = dx / (now - dragLastTime + 1);
+  velocityY = dy / (now - dragLastTime + 1);
+  dragLastX = e.touches[0].pageX;
+  dragLastY = e.touches[0].pageY;
+  dragLastTime = now;
+  container.scrollLeft -= dx;
+  container.scrollTop -= dy;
+}, { passive: false });
+
+// --- Prevent grid movement or auto-adjust when clicking a box (handle misclicks) ---
+document.addEventListener('mousedown', (e) => {
+  if (e.target.classList.contains('rect-box') || e.target.closest('.rect-box')) {
+    e.stopPropagation();
+    // Prevent drag start
+    dragStarted = false;
+  }
+});
+document.addEventListener('touchstart', (e) => {
+  if (e.target.classList.contains('rect-box') || e.target.closest('.rect-box')) {
+    e.stopPropagation();
+    dragStarted = false;
+  }
+}); 
