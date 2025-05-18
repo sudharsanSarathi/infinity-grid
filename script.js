@@ -508,7 +508,8 @@ function renderAppleGrid(targetWall = wall, imagesOverride = null, hideEmbedBtn 
         showExpandedModal(images[imgIdx]);
       };
       let hasImg = false;
-      if (uploadedImages.length > 0 || (uploadedImages.length === 0 && images[imgIdx])) {
+      if (uploadedImages.length > 0 && images[imgIdx]) {
+        // Only show image if not a placeholder and not being fetched
         const img = document.createElement('img');
         const src = images[imgIdx].startsWith('http') ? images[imgIdx] : '/images/' + images[imgIdx];
         img.src = src;
@@ -517,7 +518,8 @@ function renderAppleGrid(targetWall = wall, imagesOverride = null, hideEmbedBtn 
         img.style.objectFit = 'cover';
         img.style.borderRadius = '0';
         img.draggable = false;
-        box.appendChild(img);
+        img.onload = () => { box.appendChild(img); };
+        img.onerror = () => { /* Optionally show error state */ };
         hasImg = true;
       }
       if (!hasImg) {
@@ -819,9 +821,17 @@ function applyParallaxAndScaleEffect() {
   const boxes = document.querySelectorAll('.rect-box');
   const viewportCenterX = window.innerWidth / 2;
   const viewportCenterY = window.innerHeight / 2;
-  const maxScale = 1.8; // Increased by 20% from 1.5
+  const maxScale = 1.5; // Restored to previous value
   const minScale = 1.0;
   const maxDist = Math.sqrt((window.innerWidth/2)**2 + (window.innerHeight/2)**2);
+  // On mobile, suppress scale effect during drag
+  if (window.innerWidth <= 600 && window.__suppressScaleEffect) {
+    boxes.forEach(box => {
+      box.style.transform = '';
+      box.style.zIndex = '';
+    });
+    return;
+  }
   boxes.forEach(box => {
     const rect = box.getBoundingClientRect();
     const cellCenterX = rect.left + rect.width / 2;
@@ -832,7 +842,6 @@ function applyParallaxAndScaleEffect() {
     const scale = minScale + (maxScale - minScale) * (1 - t);
     box.style.transform = `scale(${scale})`;
     box.style.zIndex = Math.round(scale * 100);
-    // Remove .focused logic for seamless effect
   });
 }
 
@@ -1074,5 +1083,25 @@ document.addEventListener('touchstart', (e) => {
   if (e.target.classList.contains('rect-box') || e.target.closest('.rect-box')) {
     e.stopPropagation();
     dragStarted = false;
+  }
+});
+
+// --- Mobile drag: suppress scale effect during drag, trigger after release ---
+container.addEventListener('touchstart', (e) => {
+  if (window.innerWidth <= 600) {
+    window.__suppressScaleEffect = true;
+    applyParallaxAndScaleEffect();
+  }
+});
+container.addEventListener('touchend', (e) => {
+  if (window.innerWidth <= 600) {
+    window.__suppressScaleEffect = false;
+    setTimeout(applyParallaxAndScaleEffect, 10);
+  }
+});
+container.addEventListener('touchcancel', (e) => {
+  if (window.innerWidth <= 600) {
+    window.__suppressScaleEffect = false;
+    setTimeout(applyParallaxAndScaleEffect, 10);
   }
 }); 
