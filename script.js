@@ -819,7 +819,7 @@ function applyParallaxAndScaleEffect() {
   const boxes = document.querySelectorAll('.rect-box');
   const viewportCenterX = window.innerWidth / 2;
   const viewportCenterY = window.innerHeight / 2;
-  const maxScale = 1.5; // Increased by 20% from 1.25
+  const maxScale = 1.8; // Increased by 20% from 1.5
   const minScale = 1.0;
   const maxDist = Math.sqrt((window.innerWidth/2)**2 + (window.innerHeight/2)**2);
   boxes.forEach(box => {
@@ -1051,13 +1051,15 @@ container.addEventListener('touchmove', (e) => {
   const now = Date.now();
   const dx = e.touches[0].pageX - dragLastX;
   const dy = e.touches[0].pageY - dragLastY;
-  velocityX = dx / (now - dragLastTime + 1);
-  velocityY = dy / (now - dragLastTime + 1);
+  // Use direct deltas for buttery smoothness
+  container.scrollLeft -= dx;
+  container.scrollTop -= dy;
+  // Update last positions and time for momentum
+  velocityX = dx;
+  velocityY = dy;
   dragLastX = e.touches[0].pageX;
   dragLastY = e.touches[0].pageY;
   dragLastTime = now;
-  container.scrollLeft -= dx;
-  container.scrollTop -= dy;
 }, { passive: false });
 
 // --- Prevent grid movement or auto-adjust when clicking a box (handle misclicks) ---
